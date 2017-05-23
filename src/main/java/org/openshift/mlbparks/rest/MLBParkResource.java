@@ -28,9 +28,7 @@ public class MLBParkResource {
 
 	private DBCollection getMLBParksCollection() {
 		DB db = dbConnection.getDB();
-		DBCollection parkListCollection = db.getCollection("teams");
-
-		return parkListCollection;
+		return db.getCollection("teams");
 	}
 
 	private MLBPark populateParkInformation(DBObject dataValue) {
@@ -49,16 +47,13 @@ public class MLBParkResource {
 	@GET()
 	@Produces("application/json")
 	public List<MLBPark> getAllParks() {
-		ArrayList<MLBPark> allParksList = new ArrayList<MLBPark>();
+		ArrayList<MLBPark> allParksList = new ArrayList<>();
 
 		DBCollection mlbParks = this.getMLBParksCollection();
-		DBCursor cursor = mlbParks.find();
-		try {
+		try (DBCursor cursor = mlbParks.find()) {
 			while (cursor.hasNext()) {
 				allParksList.add(this.populateParkInformation(cursor.next()));
 			}
-		} finally {
-			cursor.close();
 		}
 
 		return allParksList;
@@ -71,13 +66,13 @@ public class MLBParkResource {
 			@QueryParam("lon1") float lon1, @QueryParam("lat2") float lat2,
 			@QueryParam("lon2") float lon2) {
 
-		ArrayList<MLBPark> allParksList = new ArrayList<MLBPark>();
+		ArrayList<MLBPark> allParksList = new ArrayList<>();
 		DBCollection mlbParks = this.getMLBParksCollection();
 
 		// make the query object
 		BasicDBObject spatialQuery = new BasicDBObject();
 
-		ArrayList<double[]> boxList = new ArrayList<double[]>();
+		ArrayList<double[]> boxList = new ArrayList<>();
 		boxList.add(new double[] { new Float(lon2), new Float(lat2) });
 		boxList.add(new double[] { new Float(lon1), new Float(lat1) });
 
@@ -87,13 +82,10 @@ public class MLBParkResource {
 		spatialQuery.put("coordinates", new BasicDBObject("$within", boxQuery));
 		System.out.println("Using spatial query: " + spatialQuery.toString());
 
-		DBCursor cursor = mlbParks.find(spatialQuery);
-		try {
+		try (DBCursor cursor = mlbParks.find(spatialQuery)) {
 			while (cursor.hasNext()) {
 				allParksList.add(this.populateParkInformation(cursor.next()));
 			}
-		} finally {
-			cursor.close();
 		}
 
 		return allParksList;
